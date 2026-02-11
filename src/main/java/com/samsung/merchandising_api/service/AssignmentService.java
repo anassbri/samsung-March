@@ -3,6 +3,7 @@ package com.samsung.merchandising_api.service;
 import com.samsung.merchandising_api.dto.AssignmentCreateDTO;
 import com.samsung.merchandising_api.dto.AssignmentDTO;
 import com.samsung.merchandising_api.dto.TaskItemCreateDTO;
+import com.samsung.merchandising_api.dto.TaskItemUpdateDTO;
 import com.samsung.merchandising_api.model.Assignment;
 import com.samsung.merchandising_api.model.AssignmentStatus;
 import com.samsung.merchandising_api.model.Role;
@@ -20,6 +21,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Collectors;
 
 @Service
@@ -99,6 +103,33 @@ public class AssignmentService {
         assignmentRepository.deleteById(id);
     }
 
+    @Transactional
+    public AssignmentDTO updateTaskStatuses(Long assignmentId, List<TaskItemUpdateDTO> taskUpdates) {
+        Assignment assignment = assignmentRepository.findById(assignmentId)
+                .orElseThrow(() -> new IllegalArgumentException("Assignment not found: " + assignmentId));
+
+        if (taskUpdates == null || taskUpdates.isEmpty()) {
+            return AssignmentDTO.fromEntity(assignment);
+        }
+
+        Map<Long, TaskItemUpdateDTO> updatesById = taskUpdates.stream()
+                .filter(u -> u.getId() != null && u.getStatus() != null)
+                .collect(Collectors.toMap(TaskItemUpdateDTO::getId, Function.identity(), (a, b) -> b));
+
+        for (TaskItem task : assignment.getTasks()) {
+            TaskItemUpdateDTO dto = updatesById.get(task.getId());
+            if (dto != null) {
+                task.setStatus(dto.getStatus());
+            }
+        }
+
+        // Recalculate assignment status based on tasks
+        recalculateAssignmentStatus(assignment);
+
+        Assignment saved = assignmentRepository.save(assignment);
+        return AssignmentDTO.fromEntity(saved);
+    }
+
     private Assignment buildAndValidateAssignment(AssignmentCreateDTO dto) {
         if (dto.getDate() == null) {
             throw new IllegalArgumentException("Assignment date is required");
@@ -160,6 +191,28 @@ public class AssignmentService {
             task.setStatus(dto.getStatus() != null ? dto.getStatus() : TaskItemStatus.TODO);
             task.setAssignment(assignment);
             assignment.getTasks().add(task);
+        }
+    }
+
+    private void recalculateAssignmentStatus(Assignment assignment) {
+        if (assignment.getTasks().isEmpty()) {
+            assignment.setStatus(AssignmentStatus.PLANNED);
+            return;
+        }
+        long total = assignment.getTasks().size();
+        long done = assignment.getTasks().stream()
+                .filter(t -> t.getStatus() == TaskItemStatus.DONE)
+                .count();
+        long inProgress = assignment.getTasks().stream()
+                .filter(t -> t.getStatus() == TaskItemStatus.IN_PROGRESS)
+                .count();
+
+        if (done == total) {
+            assignment.setStatus(AssignmentStatus.DONE);
+        } else if (done > 0 || inProgress > 0) {
+            assignment.setStatus(AssignmentStatus.IN_PROGRESS);
+        } else {
+            assignment.setStatus(AssignmentStatus.PLANNED);
         }
     }
 }

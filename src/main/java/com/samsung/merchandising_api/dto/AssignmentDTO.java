@@ -30,6 +30,9 @@ public class AssignmentDTO {
     private String storeName;
     private String storeCity;
     private String storeType;
+    private Double storeLatitude;
+    private Double storeLongitude;
+    private String storeAddress;
 
     private List<TaskItemDTO> tasks;
     private int completedTasks;
@@ -57,6 +60,9 @@ public class AssignmentDTO {
         dto.setStoreName(assignment.getStore().getName());
         dto.setStoreCity(assignment.getStore().getCity());
         dto.setStoreType(assignment.getStore().getType());
+        dto.setStoreLatitude(assignment.getStore().getLatitude());
+        dto.setStoreLongitude(assignment.getStore().getLongitude());
+        dto.setStoreAddress(assignment.getStore().getAddress());
         dto.setTasks(taskDTOs);
         dto.setTotalTasks(total);
         dto.setCompletedTasks(completed);

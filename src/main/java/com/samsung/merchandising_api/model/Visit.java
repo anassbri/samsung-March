@@ -41,6 +41,9 @@ public class Visit {
     @Column(name = "check_in_longitude")
     private Double checkInLongitude;
 
+    @Column(name = "photo_url", length = 500)
+    private String photoUrl;
+
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;

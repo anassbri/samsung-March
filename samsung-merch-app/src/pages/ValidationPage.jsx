@@ -1,3 +1,4 @@
+import React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Box,
@@ -16,9 +17,11 @@ import {
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ClearIcon from '@mui/icons-material/Clear';
 import AssignmentTurnedInIcon from '@mui/icons-material/AssignmentTurnedIn';
+import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
+import PeopleIcon from '@mui/icons-material/People';
 import { getVisits, updateVisitStatus } from '../services/api';
 
-const placeholderImage = 'https://placehold.co/600x400?text=Shelf+Photo';
+const placeholderImage = 'https://placehold.co/600x400?text=Pas+de+photo';
 
 const getStatusChipProps = (status) => {
   const normalized = (status || '').toUpperCase();
@@ -50,6 +53,8 @@ const timeAgo = (isoDate) => {
 function ValidationPage() {
   const queryClient = useQueryClient();
 
+  const [statusFilter, setStatusFilter] = React.useState('ALL'); // ALL, COMPLETED, VALIDATED, REJECTED
+
   const {
     data: visits = [],
     isLoading,
@@ -58,6 +63,17 @@ function ValidationPage() {
     queryKey: ['visits'],
     queryFn: getVisits,
   });
+
+  const filteredVisits = React.useMemo(() => {
+    if (statusFilter === 'ALL') return visits;
+    return visits.filter((v) => {
+      const status = (v.status || '').toUpperCase();
+      if (statusFilter === 'COMPLETED') return status === 'COMPLETED';
+      if (statusFilter === 'VALIDATED') return status === 'VALIDATED';
+      if (statusFilter === 'REJECTED') return status === 'REJECTED';
+      return true;
+    });
+  }, [visits, statusFilter]);
 
   const updateStatusMutation = useMutation({
     mutationFn: ({ id, status }) => updateVisitStatus(id, status),
@@ -111,31 +127,50 @@ function ValidationPage() {
           sx={{
             display: 'flex',
             gap: 2,
+            flexWrap: 'wrap',
           }}
         >
           <Chip
+            label="Tous"
+            onClick={() => setStatusFilter('ALL')}
+            color={statusFilter === 'ALL' ? 'primary' : 'default'}
+            variant={statusFilter === 'ALL' ? 'filled' : 'outlined'}
+            sx={{ cursor: 'pointer' }}
+          />
+          <Chip
+            label={`En attente: ${visits.filter(v => (v.status || '').toUpperCase() === 'COMPLETED').length}`}
+            onClick={() => setStatusFilter('COMPLETED')}
+            color={statusFilter === 'COMPLETED' ? 'warning' : 'default'}
+            variant={statusFilter === 'COMPLETED' ? 'filled' : 'outlined'}
+            sx={{ cursor: 'pointer' }}
+          />
+          <Chip
             icon={<CheckCircleIcon />}
-            label={`Validées: ${visits.filter(v => v.status === 'VALIDATED').length}`}
-            color="success"
-            variant="filled"
+            label={`Validées: ${visits.filter(v => (v.status || '').toUpperCase() === 'VALIDATED').length}`}
+            onClick={() => setStatusFilter('VALIDATED')}
+            color={statusFilter === 'VALIDATED' ? 'success' : 'default'}
+            variant={statusFilter === 'VALIDATED' ? 'filled' : 'outlined'}
+            sx={{ cursor: 'pointer' }}
           />
           <Chip
             icon={<ClearIcon />}
-            label={`Rejetées: ${visits.filter(v => v.status === 'REJECTED').length}`}
-            color="error"
-            variant="outlined"
+            label={`Rejetées: ${visits.filter(v => (v.status || '').toUpperCase() === 'REJECTED').length}`}
+            onClick={() => setStatusFilter('REJECTED')}
+            color={statusFilter === 'REJECTED' ? 'error' : 'default'}
+            variant={statusFilter === 'REJECTED' ? 'filled' : 'outlined'}
+            sx={{ cursor: 'pointer' }}
           />
         </Box>
       </Box>
 
       <Grid container spacing={3}>
-        {visits.map((visit) => {
+        {filteredVisits.map((visit) => {
           const { color, label } = getStatusChipProps(visit.status);
           const promoterName = visit.userName || 'Promoter';
           const storeName = visit.storeName || 'Store';
           const visitDate = timeAgo(visit.visitDate);
           const shelfShare = visit.shelfShare !== null && visit.shelfShare !== undefined
-            ? `${(visit.shelfShare * 100).toFixed(0)}%`
+            ? `${Number(visit.shelfShare).toFixed(0)}%`
             : 'N/A';
           const comment = visit.comment || 'Aucun commentaire';
           const assignmentInfo = visit.assignmentId
@@ -164,8 +199,9 @@ function ValidationPage() {
                 <CardMedia
                   component="img"
                   height="180"
-                  image={placeholderImage}
-                  alt="Shelf Photo"
+                  image={visit.photoUrl || placeholderImage}
+                  alt="Photo de visite"
+                  sx={{ objectFit: 'cover', backgroundColor: '#f0f0f0' }}
                 />
                 <CardContent sx={{ flexGrow: 1 }}>
                   {/* Core KPIs */}
@@ -193,6 +229,62 @@ function ValidationPage() {
                   <Typography variant="body2" color="text.secondary">
                     {tasksSummary}
                   </Typography>
+
+                  {/* Interactions Detail */}
+                  {visit.interactions && visit.interactions.length > 0 && (
+                    <>
+                      <Divider sx={{ my: 1 }} />
+                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                        <PeopleIcon sx={{ fontSize: 18, mr: 1, color: '#034EA2' }} />
+                        <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                          Interactions ({visit.interactions.length})
+                        </Typography>
+                      </Box>
+                      {visit.interactions.slice(0, 3).map((interaction, idx) => (
+                        <Box key={interaction.id || idx} sx={{ mb: 0.5, pl: 1, borderLeft: '2px solid #e0e0e0' }}>
+                          <Typography variant="body2" color="text.secondary">
+                            <strong>{interaction.productName || 'Produit N/A'}</strong>
+                            {' — '}
+                            {interaction.gender || 'N/A'}, {interaction.color || 'N/A'}
+                          </Typography>
+                        </Box>
+                      ))}
+                      {visit.interactions.length > 3 && (
+                        <Typography variant="caption" color="text.secondary" sx={{ pl: 1 }}>
+                          +{visit.interactions.length - 3} interaction(s) supplémentaire(s)
+                        </Typography>
+                      )}
+                    </>
+                  )}
+
+                  {/* Sellout Detail */}
+                  {visit.selloutItems && visit.selloutItems.length > 0 && (
+                    <>
+                      <Divider sx={{ my: 1 }} />
+                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                        <ShoppingCartIcon sx={{ fontSize: 18, mr: 1, color: '#28a745' }} />
+                        <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                          Ventes ({visit.selloutItems.length})
+                        </Typography>
+                      </Box>
+                      {visit.selloutItems.slice(0, 3).map((sellout, idx) => (
+                        <Box key={sellout.id || idx} sx={{ mb: 0.5, pl: 1, borderLeft: '2px solid #d4edda' }}>
+                          <Typography variant="body2" color="text.secondary">
+                            <strong>{sellout.productName || 'Produit'}</strong>
+                            {' — Qté: '}{sellout.quantity}{', '}{(sellout.amount || 0).toFixed(2)} MAD
+                          </Typography>
+                        </Box>
+                      ))}
+                      {visit.selloutItems.length > 3 && (
+                        <Typography variant="caption" color="text.secondary" sx={{ pl: 1 }}>
+                          +{visit.selloutItems.length - 3} vente(s) supplémentaire(s)
+                        </Typography>
+                      )}
+                      <Typography variant="body2" sx={{ mt: 1, fontWeight: 600, color: '#28a745' }}>
+                        Total: {visit.selloutItems.reduce((sum, s) => sum + (s.amount || 0), 0).toFixed(2)} MAD
+                      </Typography>
+                    </>
+                  )}
                 </CardContent>
                 {visit.status !== 'VALIDATED' && (
                   <Box sx={{ p: 2, pt: 0 }}>

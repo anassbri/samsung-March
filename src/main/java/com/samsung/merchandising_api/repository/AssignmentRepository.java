@@ -24,5 +24,7 @@ public interface AssignmentRepository extends JpaRepository<Assignment, Long> {
     List<Assignment> findByUserAndDate(User user, LocalDate date);
 
     long countByDateAndStatus(LocalDate date, AssignmentStatus status);
+
+    List<Assignment> findByUserIdInAndDate(List<Long> userIds, LocalDate date);
 }
 

@@ -9,13 +9,18 @@ import {
   Typography,
   CircularProgress,
   Alert,
+  InputAdornment,
+  IconButton,
 } from '@mui/material';
+import { Visibility, VisibilityOff } from '@mui/icons-material';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import samsungLogo from '../assets/samsung png.png';
 
 function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
@@ -59,42 +64,89 @@ function Login() {
         alignItems: 'center',
         justifyContent: 'center',
         background:
-          'linear-gradient(135deg, #1428a0 0%, #0d1c6e 40%, #000000 100%)',
+          'linear-gradient(135deg, #034EA2 0%, #0d2b6e 40%, #050a1a 100%)',
         p: 2,
+        position: 'relative',
+        overflow: 'hidden',
+        '&::before': {
+          content: '""',
+          position: 'absolute',
+          top: '-50%',
+          right: '-30%',
+          width: '80%',
+          height: '120%',
+          borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(3, 78, 162, 0.15) 0%, transparent 60%)',
+        },
       }}
     >
       <Card
         sx={{
-          maxWidth: 420,
+          maxWidth: 440,
           width: '100%',
-          borderRadius: 3,
-          boxShadow: 6,
+          borderRadius: 4,
+          boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
+          overflow: 'visible',
         }}
       >
-        <CardContent sx={{ p: 4 }}>
+        <CardContent sx={{ p: 5 }}>
+          {/* Samsung Logo */}
+          <Box sx={{ textAlign: 'center', mb: 1 }}>
+            <Box
+              component="img"
+              src={samsungLogo}
+              alt="Samsung"
+              sx={{
+                width: 160,
+                height: 'auto',
+                mb: 2,
+              }}
+            />
+          </Box>
+
           <Typography
             variant="h5"
             component="h1"
             gutterBottom
-            sx={{ fontWeight: 'bold', textAlign: 'center' }}
+            sx={{
+              fontWeight: 700,
+              textAlign: 'center',
+              color: '#1a1a1a',
+              letterSpacing: '-0.02em',
+            }}
           >
-            Samsung Merchandising - Supervisor
+            Merchandising
           </Typography>
           <Typography
             variant="body2"
-            color="text.secondary"
-            sx={{ mb: 3, textAlign: 'center' }}
+            sx={{
+              mb: 4,
+              textAlign: 'center',
+              color: '#888',
+              fontSize: '0.85rem',
+            }}
           >
-            Connectez-vous pour accéder au tableau de bord superviseur.
+            Connectez-vous au tableau de bord superviseur
           </Typography>
 
           {error && (
-            <Alert severity="error" sx={{ mb: 2 }}>
+            <Alert
+              severity="error"
+              sx={{
+                mb: 3,
+                borderRadius: 2,
+                '& .MuiAlert-message': { fontSize: '0.85rem' },
+              }}
+            >
               {error}
             </Alert>
           )}
 
-          <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <Box
+            component="form"
+            onSubmit={handleSubmit}
+            sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}
+          >
             <TextField
               label="Email"
               type="email"
@@ -102,14 +154,51 @@ function Login() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               autoComplete="email"
+              variant="outlined"
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: 2,
+                  '&.Mui-focused fieldset': {
+                    borderColor: '#034EA2',
+                  },
+                },
+                '& .MuiInputLabel-root.Mui-focused': {
+                  color: '#034EA2',
+                },
+              }}
             />
             <TextField
               label="Mot de passe"
-              type="password"
+              type={showPassword ? 'text' : 'password'}
               fullWidth
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               autoComplete="current-password"
+              variant="outlined"
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      onClick={() => setShowPassword(!showPassword)}
+                      edge="end"
+                      size="small"
+                    >
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: 2,
+                  '&.Mui-focused fieldset': {
+                    borderColor: '#034EA2',
+                  },
+                },
+                '& .MuiInputLabel-root.Mui-focused': {
+                  color: '#034EA2',
+                },
+              }}
             />
             <Button
               type="submit"
@@ -118,13 +207,40 @@ function Login() {
               disabled={loading}
               sx={{
                 mt: 1,
-                backgroundColor: '#1428a0',
-                '&:hover': { backgroundColor: '#0d1c6e' },
+                py: 1.5,
+                borderRadius: 2,
+                backgroundColor: '#034EA2',
+                fontSize: '0.95rem',
+                fontWeight: 600,
+                letterSpacing: '0.02em',
+                textTransform: 'none',
+                boxShadow: '0 4px 14px rgba(3, 78, 162, 0.35)',
+                '&:hover': {
+                  backgroundColor: '#023b7a',
+                  boxShadow: '0 6px 20px rgba(3, 78, 162, 0.4)',
+                },
               }}
             >
-              {loading ? <CircularProgress size={22} sx={{ color: 'white' }} /> : 'Se connecter'}
+              {loading ? (
+                <CircularProgress size={22} sx={{ color: 'white' }} />
+              ) : (
+                'Se connecter'
+              )}
             </Button>
           </Box>
+
+          <Typography
+            variant="caption"
+            sx={{
+              display: 'block',
+              textAlign: 'center',
+              mt: 4,
+              color: '#bbb',
+              fontSize: '0.7rem',
+            }}
+          >
+            Samsung Electronics © 2026 – Supervisor Dashboard
+          </Typography>
         </CardContent>
       </Card>
     </Box>
@@ -132,4 +248,3 @@ function Login() {
 }
 
 export default Login;
-

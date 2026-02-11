@@ -11,10 +11,11 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.RequestMethod;
 
 @RestController
 @RequestMapping("/api/users")
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = "*", allowedHeaders = "*", methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.PATCH, RequestMethod.DELETE, RequestMethod.OPTIONS})
 public class UserController {
 
     private final UserService userService;
@@ -69,6 +70,15 @@ public class UserController {
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
         }
+    }
+
+    /**
+     * GET /api/users/{sfosId}/team - Get all promoters under a specific SFOS manager
+     */
+    @GetMapping("/{sfosId}/team")
+    public ResponseEntity<?> getTeamMembers(@PathVariable Long sfosId) {
+        java.util.List<UserResponseDTO> team = userService.getTeamMembers(sfosId);
+        return ResponseEntity.ok(team);
     }
 
     /**

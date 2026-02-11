@@ -100,6 +100,19 @@ public class UserService {
     }
 
     /**
+     * Get all promoters under a specific SFOS manager
+     */
+    public List<UserResponseDTO> getTeamMembers(Long sfosId) {
+        User sfos = userRepository.findById(sfosId)
+                .orElseThrow(() -> new IllegalArgumentException("SFOS not found: " + sfosId));
+        if (sfos.getRole() != Role.SFOS) {
+            throw new IllegalArgumentException("User is not an SFOS");
+        }
+        List<User> team = userRepository.findByManagerId(sfosId);
+        return UserResponseDTO.fromUsers(team);
+    }
+
+    /**
      * Assign a promoter to an SFOS manager
      */
     @Transactional

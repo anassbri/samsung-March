@@ -7,6 +7,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -21,6 +23,7 @@ public class VisitResponseDTO {
     private String comment;
     private Double checkInLatitude;
     private Double checkInLongitude;
+    private String photoUrl;
     
     // Store information
     private Long storeId;
@@ -37,6 +40,10 @@ public class VisitResponseDTO {
     private Integer totalTasks;
     private Integer completedTasks;
 
+    // Interactions & Sellout details (populated separately)
+    private List<InteractionDTO> interactions = new ArrayList<>();
+    private List<SelloutDTO> selloutItems = new ArrayList<>();
+
     public static VisitResponseDTO fromVisit(Visit visit) {
         VisitResponseDTO dto = new VisitResponseDTO();
         dto.setId(visit.getId());
@@ -48,6 +55,7 @@ public class VisitResponseDTO {
         dto.setComment(visit.getComment());
         dto.setCheckInLatitude(visit.getCheckInLatitude());
         dto.setCheckInLongitude(visit.getCheckInLongitude());
+        dto.setPhotoUrl(visit.getPhotoUrl());
 
         // Store information
         if (visit.getStore() != null) {
